@@ -1,0 +1,49 @@
+#!/usr/bin/perl -w -CSDA
+
+use strict;
+use utf8;
+use v5.010;
+use Data::Dumper; #::AutoEncode;   # Not a standard module
+use Unicode::Collate;
+use Storable;
+
+
+my $uc = Unicode::Collate->new();
+# my $dict_file = "photius.dsl";
+# my $dict_index = "photius.idx";
+
+my $dict = shift @ARGV;
+my $search_regex = shift @ARGV;
+my %w_index;
+my @w_matches;
+my $max_matches = 20;                            # maximum lemata to return
+
+# &dict_indexer($dict);
+
+# say $search_regex;
+%w_index = %{retrieve($dict . '.idx')};
+# die if $@;
+
+my $n = 0;                                       # lema counter
+foreach my $d_head ( keys %w_index){
+  if ($d_head =~ m/$search_regex/){
+      push @w_matches, $d_head;
+      $n++;
+  }
+  last if $n >= $max_matches;
+}
+open (IN, '<', $dict . '.dsl') or die $!;
+foreach ($uc->sort( @w_matches)){
+  my ($idx, $word) = @{$w_index{$_}};            # [index, word]
+  seek IN, $idx, 0;
+  my $body = <IN>;
+  chomp $body;
+  $body =~ s/^\s+\[m1\]//;
+  $body =~ s/\[\/m\]$//;
+  print "$word: ";
+  print "$body\n\n";
+}
+close IN;
+# say foreach @w_matches;
+
+

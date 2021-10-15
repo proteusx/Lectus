@@ -3,28 +3,32 @@
 use strict;
 use utf8;
 use v5.010;
-use Data::Dumper; #::AutoEncode;   # Not a standard module
 use Unicode::Collate;
 use Storable;
 
-
-my $uc = Unicode::Collate->new();
-# my $dict_file = "photius.dsl";
-# my $dict_index = "photius.idx";
+if ($#ARGV < 1){
+  say "Usage:   $0 dictionary regex";
+  say "Example: $0 photius ^κη.*ος";
+  exit;
+}
 
 my $dict = shift @ARGV;
 my $search_regex = shift @ARGV;
+
+my $uc = Unicode::Collate->new();
+my $dict_file = $dict . '.dsl';
+my $dict_index = $dict.'.idx';
 my %w_index;
 my @w_matches;
-my $max_matches = 20;                            # maximum lemata to return
+my $max_matches = 20;                            # Maximum lemata to return
 
-# &dict_indexer($dict);
+&dict_indexer($dict);                            # Generate index if not there
 
 # say $search_regex;
-%w_index = %{retrieve($dict . '.idx')};
-# die if $@;
 
-my $n = 0;                                       # lema counter
+%w_index = %{retrieve($dict_index)};
+
+my $n = 0;                                       # Lema counter
 foreach my $d_head ( keys %w_index){
   if ($d_head =~ m/$search_regex/){
       push @w_matches, $d_head;
@@ -32,7 +36,7 @@ foreach my $d_head ( keys %w_index){
   }
   last if $n >= $max_matches;
 }
-open (IN, '<', $dict . '.dsl') or die $!;
+open (IN, '<', $dict_file) or die $!;
 foreach ($uc->sort( @w_matches)){
   my ($idx, $word) = @{$w_index{$_}};            # [index, word]
   seek IN, $idx, 0;
@@ -46,4 +50,63 @@ foreach ($uc->sort( @w_matches)){
 close IN;
 # say foreach @w_matches;
 
+#-----------------------------------------------------------
+
+sub dict_indexer
+{
+  my $dict = shift @_;
+  my $dict_idx = $dict . '.idx';
+
+  return if -e $dict_idx;                      # Return if index exists
+
+  my %w_index;
+  my %dups;
+  my $offset = 0;
+
+
+  open (IN, '<', $dict . '.dsl');
+  while (<IN>) {
+    next if /#/;
+    unless (/^\t/){
+      $offset = tell(IN);
+      my $head = $_;
+      chomp $head;
+      $head =~ s/\x{feff}//;
+      my $d_head = detone($head);
+      unless (exists $w_index{$d_head}){
+        $w_index{$d_head} = [$offset, $head];
+      }else{
+        if (exists($dups{$d_head})){
+          $dups{$d_head}++;
+          $w_index{$d_head . "-" ."$dups{$d_head}"} = [$offset, $head];
+        }else{
+          $dups{$d_head} = 1;
+          $w_index{$d_head . "-1"} = [$offset, $head];
+        }
+      }
+    }
+  }
+  store \%w_index, $dict_idx;
+  close IN;
+  say "$dict.dsl indexed -> $dict_idx";
+  return;
+}
+
+#-----------------------------------------------------------
+
+sub detone
+{
+  my $word = shift @_;
+  $word =~ tr/ἀἁάάὰᾶἄἂἆἅἃἇᾳᾀᾄᾂᾆᾁᾅᾃᾇΑἈἉΆΆᾺἌἊἎἍἋἏ/α/;
+  $word =~ tr/ἐἑέέὲἔἒἕἓΕἘἙΈΈῈἜἚ/ε/;
+  $word =~ tr/ἠἡήήὴῆἤἢἦἥἣἧῃᾐᾔᾒᾖᾑᾕᾓᾗΗἨἩΉΉῊἬἪἮἭἫἯ/η/;
+  $word =~ tr/ἰἱίίὶῖἴἲἶἵἳἷϊΙἸἹΊΊῚἼἺἾἽἻἿ/ι/;
+  $word =~ tr/ὀὁόόὸὄὂὅὃΟὈὉΌΌῸὌὊὍὋ/ο/;
+  $word =~ tr/ὐὑύύὺῦὔὒὖὕὓὗϋΥὙΎΎῪὝὛὟ/υ/;
+  $word =~ tr/ὠὡώώὼῶὤὢὦὥὣὧῳᾠᾡᾤᾢᾦᾥᾣᾧΩὨὩΏΏῺὬὪὮὭὫὯ/ω/;
+  $word =~ tr/ῥῤῬΡ/ρ/;
+  $word =~ tr/ΒΓΔΖΘΚΛΜΝΞΠΡΣΤΦΧΨ/βγδζθκλμνξπρστφχψ/;
+  $word =~ s/’//g;
+  return $word;
+}
 

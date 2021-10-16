@@ -40,10 +40,16 @@ open (IN, '<', $dict_file) or die $!;
 foreach ($uc->sort( @w_matches)){
   my ($idx, $word) = @{$w_index{$_}};            # [index, word]
   seek IN, $idx, 0;
-  my $body = <IN>;
-  chomp $body;
-  $body =~ s/^\s+\[m1\]//;
-  $body =~ s/\[\/m\]$//;
+  my $body = "";
+  while(1){
+    my $line = <IN> ;
+    last unless $line =~ /\[m\d\]/;
+    chomp $line;
+    $body .= $line;
+  }
+  $body =~ s/\s*\[\/?m\d?\]//g;
+  $body =~ s/\[\/?c.*?\]//g;                    # No colour markups (for the moment)
+  $body =~ s/\[\/?b\]//g;
   print "$word: ";
   print "$body\n\n";
 }

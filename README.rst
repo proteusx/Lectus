@@ -12,6 +12,13 @@ ___________
 Lectus is a script to query dictionay files (only ABBYY Lingvo .dsl for the
 moment) and display the results in a Linux terminal.
 
+-----------------------------------------------------------------
+.. figure:: lectus.png
+   :scale: 100
+   :align: center
+   :alt: Lectus Ilustration
+
+-----------------------------------------------------------------
 
 Installation
 ____________

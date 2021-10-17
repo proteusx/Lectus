@@ -55,8 +55,8 @@ The search term can be a regular expression like::
 
   lectus photius κ.*ος
 
-Will return all words that include strings that start with a "κ" followed by any number
-of characters and end with a 'ς'::
+Will return all words that include strings that start with a "**κ**" followed by any number
+of characters and end with a "**ς**"::
 
  lectus suda \^κη\(π\|τ\)ος
 

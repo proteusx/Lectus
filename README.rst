@@ -66,7 +66,9 @@ This will search the Suda_ lexicon (file ``suda.dsl``) and will return words lik
 Any Perl like regular expression is acceptable input, but symbols that are
 significant to the shell, like ``^,|,(,)`` etc. must be escaped.
 
-Lectus displays the first 20 results that match the query.
+Lectus displays the first 20 results that match the query in alphabetical
+order.
+
 
 
 When Lectus sees a dictionary for the first time it will generate an index file

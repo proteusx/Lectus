@@ -25,7 +25,7 @@ my $max_matches = 20;                            # Maximum lemata to return
 
 &dict_indexer($dict);                            # Generate index if not there
 
-# say RED, $search_regex, RESET;
+say $search_regex;
 
 %w_index = %{retrieve($dict_index)};
 

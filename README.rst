@@ -56,19 +56,17 @@ The search term can be a regular expression like::
   lectus photius κ.*ος
 
 Will return all words that include strings that start with a "**κ**" followed by any number
-of characters and end with a "**ς**"::
+of characters and end with a "**ς**".
+
+To search the Suda_ lexicon (file ``suda.dsl``) for words like
+``κῆπος`` and ``κῆτος``::
 
  lectus suda \^κη\(π\|τ\)ος
 
-This will search the Suda_ lexicon (file ``suda.dsl``) and will return words like ``κῆπος`` and ``κῆτος``.
+Any Perl like regular expression is acceptable input, provided that symbols that are
+significant to the shell, like ``^,|,(,)``, etc. are escaped with a "\".
 
-
-Any Perl like regular expression is acceptable input, but symbols that are
-significant to the shell, like ``^,|,(,)`` etc. must be escaped.
-
-Lectus displays the first 20 results that match the query in alphabetical
-order.
-
+Lectus displays in alphabetical order the first 20 results that match the query.
 
 
 When Lectus sees a dictionary for the first time it will generate an index file

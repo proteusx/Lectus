@@ -64,7 +64,7 @@ To search the Suda_ lexicon (file ``suda.dsl``) for words like
  lectus suda \^κη\(π\|τ\)ος
 
 Any Perl like regular expression is acceptable input, provided that symbols that are
-significant to the shell, like ``^,|,(,)``, etc. are escaped with a "\".
+significant to the shell, like ``^,|,(,)``, etc. are escaped with a "\\".
 
 Lectus displays in alphabetical order the first 20 results that match the query.
 

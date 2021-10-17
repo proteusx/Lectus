@@ -5,6 +5,7 @@ use utf8;
 use v5.010;
 use Unicode::Collate;
 use Storable;
+# use Term::ANSIColor qw(:constants);
 
 if ($#ARGV < 1){
   say "Usage:   $0 dictionary regex";
@@ -24,7 +25,7 @@ my $max_matches = 20;                            # Maximum lemata to return
 
 &dict_indexer($dict);                            # Generate index if not there
 
-# say $search_regex;
+# say RED, $search_regex, RESET;
 
 %w_index = %{retrieve($dict_index)};
 
@@ -48,14 +49,31 @@ foreach ($uc->sort( @w_matches)){
     $body .= $line;
   }
   $body =~ s/\s*\[\/?m\d?\]//g;
-  $body =~ s/\[\/?c.*?\]//g;                    # No colour markups (for the moment)
-  $body =~ s/\[\/?b\]//g;
-  print "$word: ";
+  colour($body);                                # Markups -> colour
+  # decolour($body);                            # Remove colour markups.
+
+  print "\x1b[35;1m", $word, "\x1b[0m", ": ";
   print "$body\n\n";
 }
 close IN;
 # say foreach @w_matches;
 
+#-----------------------------------------------------------
+sub colour
+{
+  # $_[0] =~ s/\[c.*?\]/\x1b[36;1m/g;
+  $_[0] =~ s/\[c limegreen\]/\x1b[34;1m/g;
+  $_[0] =~ s/\[\/c\]/\x1b[0m/g;
+  $_[0] =~ s/\[b\]/\x1b[35;1m/g;
+  $_[0] =~ s/\[\/b\]/\x1b[0m/g;
+
+}
+sub decolour
+{
+  $_[0] =~ s/\[\/?c.*?\]//g;
+  $_[0] =~ s/\[\/?b\]//g;
+
+}
 #-----------------------------------------------------------
 
 sub dict_indexer

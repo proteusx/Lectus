@@ -43,6 +43,11 @@ to the shell, like ``^,|,(,)`` etc. must be escaped.
 Lectus displays the first 20 results that match the query.
 
 
+When Lectus sees a dictionary for the first time it will generate an index file
+(.idx) which records the location of every headword within the .dsl file.
+Subsequent queries on the same dictionary will go through this index.
+
+
 
 
 

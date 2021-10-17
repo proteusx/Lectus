@@ -28,20 +28,22 @@ Clone the GitHub repository::
 
    git clone:https://github.com/proteusx/Lectus.git
 
-Copy or link some *.dsl dictionary files into the Lectus directory.
 
+Copy or link some .dsl dictionary files into the Lectus directory.
 
 
 Usage
 _____
 
+
 ``lectus DICTIONARY REGEX``
+
 
 Examples
 ________
 
-Assuming that you have a copy or a link to the **Photius** dictionary
-(photius.dsl), to search for the lemma ``κηπος``::
+Assuming that you have a copy or a link to the Photius_ lexicon
+(file ``photius.dsl``), to search for the lemma ``κηπος``::
 
       lectus photius κηπος
 
@@ -53,12 +55,12 @@ The search term can be a regular expression like::
 
   lectus photius κ.*ος
 
-Will return all words that include that starts with a "κ" followed by any number
-of characters and ends with a 'ς'::
+Will return all words that include strings that start with a "κ" followed by any number
+of characters and end with a 'ς'::
 
  lectus suda \^κη\(π\|τ\)ος
 
-This will return words like ``κῆπος`` and ``κῆτος``.
+This will search the Suda_ lexicon (file ``suda.dsl``) and will return words like ``κῆπος`` and ``κῆτος``.
 
 
 Any Perl like regular expression is acceptable input, but symbols that are
@@ -73,9 +75,8 @@ Subsequent queries on the same dictionary will go through this index, find the
 headword, read the corresponding index and rapidly locate the answer in the .dsl
 file.
 
-
-
-
+.. _Photius: https://github.com/proteusx/Photius-Lexicon
+.. _Suda: https://github.com/proteusx/Suda-For-GoldenDict
 
 
 
@@ -86,3 +87,5 @@ file.
 
 
 .. vim: set syntax=rst tw=80 spell fo=tq:
+
+

@@ -9,8 +9,8 @@ ________________
 Description
 ___________
 
-Lectus is a script to query dictionay files (only ABBYY Lingvo .dsl for the
-moment) and display the results in a Linux terminal.
+Lectus is a script to query dictionary files (for the moment, only ABBYY Lingvo
+.dsl dictionaries) and display the results in a Linux terminal.
 
 -----------------------------------------------------------------
 
@@ -37,23 +37,41 @@ _____
 
 ``lectus DICTIONARY REGEX``
 
-Example: Assuming that you have a copy or a link to the **Photius** dictionary
+Examples
+________
+
+Assuming that you have a copy or a link to the **Photius** dictionary
 (photius.dsl), to search for the lemma ``κηπος``::
 
       lectus photius κηπος
 
+Τhis will return all the headwords that include the string ``κηπος``.
 The search term must be typed without accents.
+Searching is always case insensitive.
 
-The search term can be a regular expression like: ``κ.*ος`` or ``\^κη\(π\|τ\)ος``.
-Any Perl like regular expression is acceptable but symbols that are significant
-to the shell, like ``^,|,(,)`` etc. must be escaped.
+The search term can be a regular expression like::
+
+  lectus photius κ.*ος
+
+Will return all words that include that starts with a "κ" followed by any number
+of characters and ends with a 'ς'::
+
+ lectus suda \^κη\(π\|τ\)ος
+
+This will return words like ``κῆπος`` and ``κῆτος``.
+
+
+Any Perl like regular expression is acceptable input, but symbols that are
+significant to the shell, like ``^,|,(,)`` etc. must be escaped.
 
 Lectus displays the first 20 results that match the query.
 
 
 When Lectus sees a dictionary for the first time it will generate an index file
 (.idx) which records the location of every headword within the .dsl file.
-Subsequent queries on the same dictionary will go through this index.
+Subsequent queries on the same dictionary will go through this index, find the
+headword, read the corresponding index and rapidly locate the answer in the .dsl
+file.
 
 
 

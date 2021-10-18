@@ -46,15 +46,16 @@ foreach ($uc->sort( @w_matches)){
   while(1){
     my $line = <IN> ;
     last unless $line =~ /\[m\d\]/;
-    chomp $line;
+    $line =~ s/\s*\[\/?m\d?\]//g;
+    # chomp $line;
     $body .= $line;
   }
-  $body =~ s/\s*\[\/?m\d?\]//g;
+  # $body =~ s/\s*\[\/?m\d?\]//g;
   &colour($body);                                # Markups -> colour
   # &decolour($body);                            # Remove colour markups.
 
   print "\x1b[35;1m", $word, "\x1b[0m", ": ";
-  print "$body\n\n";
+  print "$body\n";
 }
 close IN;
 # say foreach @w_matches;
@@ -63,10 +64,18 @@ close IN;
 sub colour
 {
   # $_[0] =~ s/\[c.*?\]/\x1b[36;1m/g;
-  $_[0] =~ s/\[c limegreen\]/\x1b[34;1m/g;
+  $_[0] =~ s/\[c limegreen\]/\x1b[32;1m/g;
+  $_[0] =~ s/\[c darkblue\]/\x1b[34;1m/g;
+  $_[0] =~ s/\[c darkmagenta\]/\x1b[35;1m/g;
+  $_[0] =~ s/\[c maroon\]/\x1b[31;1m/g;
+  $_[0] =~ s/\[c gray\]/\x1b[36;1m/g;
+  $_[0] =~ s/\[c red]//g;
   $_[0] =~ s/\[\/c\]/\x1b[0m/g;
   $_[0] =~ s/\[b\]/\x1b[35;1m/g;
   $_[0] =~ s/\[\/b\]/\x1b[0m/g;
+  $_[0] =~ s/\[\/?i\]//g;
+  $_[0] =~ s/\\\[/\[/g;
+  $_[0] =~ s/\\\]/\]/g;
 
 }
 sub decolour
@@ -94,7 +103,7 @@ sub dict_indexer
     unless (/^\t/){
       $offset = tell(IN);
       my $head = $_;
-      chomp $head;
+      chomp $head;         # dos files may need: s/(\n|\r)//g
       $head =~ s/\x{feff}//;
       my $d_head = &detone($head);
       unless (exists $w_index{$d_head}){

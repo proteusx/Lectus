@@ -23,9 +23,10 @@ my %w_index;
 my @w_matches;
 my $max_matches = 20;                            # Maximum lemata to return
 
-&dict_indexer($dict);                            # Generate index if not there
+&dict_indexer($dict) unless -e $dict_index;      # Generate index if not there
 
 # say $search_regex;
+say "";
 
 %w_index = %{retrieve($dict_index)};
 
@@ -49,8 +50,8 @@ foreach ($uc->sort( @w_matches)){
     $body .= $line;
   }
   $body =~ s/\s*\[\/?m\d?\]//g;
-  colour($body);                                # Markups -> colour
-  # decolour($body);                            # Remove colour markups.
+  &colour($body);                                # Markups -> colour
+  # &decolour($body);                            # Remove colour markups.
 
   print "\x1b[35;1m", $word, "\x1b[0m", ": ";
   print "$body\n\n";
@@ -81,14 +82,13 @@ sub dict_indexer
   my $dict = shift @_;
   my $dict_idx = $dict . '.idx';
 
-  return if -e $dict_idx;                      # Return if index exists
 
   my %w_index;
   my %dups;
   my $offset = 0;
 
 
-  open (IN, '<', $dict . '.dsl');
+  open (IN, '<', $dict . '.dsl') or die $!;
   while (<IN>) {
     next if /#/;
     unless (/^\t/){
@@ -96,7 +96,7 @@ sub dict_indexer
       my $head = $_;
       chomp $head;
       $head =~ s/\x{feff}//;
-      my $d_head = detone($head);
+      my $d_head = &detone($head);
       unless (exists $w_index{$d_head}){
         $w_index{$d_head} = [$offset, $head];
       }else{

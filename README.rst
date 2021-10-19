@@ -36,8 +36,20 @@ Usage
 _____
 
 
-``lectus DICTIONARY REGEX``
+``lectus <LEMMA> [OPTION]``
 
+OPTIONS::
+
+
+       -r or --regex               Toggle search by regular expression
+       -d or --dictionaries        Space separated list of dictionaries
+
+If option ``-r`` is given then ``LEMMA`` is assumed to be a regular expression otherwise
+Lectus will look for an exact match.
+
+If option ``-d`` is given and it is followed by one or more dictionary names, these will be
+searched, otherwise all dictionaries present in the current working directory
+(CWD) will be searched in sequence.
 
 Examples
 ________
@@ -45,15 +57,18 @@ ________
 Assuming that you have a copy or a link to the Photius_ lexicon
 (file ``photius.dsl``), to search for the lemma ``κηπος``::
 
-      lectus photius κηπος
+      lectus  κηπος -d photius
 
-Τhis will return all the headwords that include the string ``κηπος``.
-The search term must be typed without accents.
+This will return the meaning of the exact word ``κηπος``. The search term must be typed without accents.
 Searching is always case insensitive.
+
+To search all dictionaries for the word ``κηπος``::
+
+      lectus κηπος
 
 The search term can be a regular expression like::
 
-  lectus photius κ.*ος
+  lectus κ.*ος -r -d photius
 
 Will return all words that include strings that start with a "**κ**" followed by any number
 of characters and end with a "**ς**".
@@ -61,7 +76,7 @@ of characters and end with a "**ς**".
 To search the Suda_ lexicon (file ``suda.dsl``) for words like
 ``κῆπος`` and ``κῆτος``::
 
- lectus suda \^κη\(π\|τ\)ος
+ lectus \^κη\(π\|τ\)ος -r -d suda
 
 Any Perl like regular expression is acceptable input, provided that symbols that are
 significant to the shell, like ``^,|,(,)``, etc. are escaped with a "\\".

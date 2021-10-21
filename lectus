@@ -42,7 +42,7 @@ foreach my $dict (@dicts){
   my $n = 0;                                       # Lemma counter
   foreach my $d_head ( keys %w_index){
     unless ($regex_flag){
-      $lemma = qr/^$search_regex-?\d?/;
+      $lemma = qr/^$search_regex-?\d?$/;
     }else{
       $lemma = qr/$search_regex/;
     }
@@ -59,12 +59,13 @@ foreach my $dict (@dicts){
   }
   open (IN, '<', $dict_file) or die $!;
   foreach ($uc->sort( @w_matches)){
+    # say $_;
     my ($idx, $word) = @{$w_index{$_}};            # [index, word]
     seek IN, $idx, 0;
     my $body = "";
     while(1){
       my $line = <IN> ;
-      last unless $line =~ /\[m\d\]/;
+      last unless $line =~ /\t\[m\d\]/;
       $line =~ s/\s*\[\/?m\d?\]//g;
       # chomp $line;
       $body .= $line;
@@ -122,16 +123,21 @@ sub dict_indexer
   my %w_index;
   my %dups;
   my $offset = 0;
-
+  my $head;
+  my $d_head;
+  my $body_lines = 1;
+  my @prev_d_heads= ();       # Store detoned heads for bodyless lemmata
   open (IN, '<', $dict . '.dsl') or die $!;
   while (<IN>) {
     next if /#/;
+    next if /^\s*$/;
     unless (/^\t/){
+      push @prev_d_heads, $d_head;
       $offset = tell(IN);
-      my $head = $_;
+      $head = $_;
       $head =~ s/(\n|\r)//g;    # Need this for DOS \n\r. chomp leaves \r
       $head =~ s/\x{feff}//;
-      my $d_head = &detone($head);
+      $d_head = &detone($head);
       unless (exists $w_index{$d_head}){
         $w_index{$d_head} = [$offset, $head];
       }else{
@@ -142,8 +148,22 @@ sub dict_indexer
           $dups{$d_head} = 1;
           $w_index{$d_head . "-1"} = [$offset, $head];
         }
+      }  # -- End unless exists
+
+      #-------------------------------------------------------------
+      #      Offsets of bodyless lemmata are set to the first
+      #      lemma that has a body.  Good for Beeks but may give
+      #      silly results in other dictionaries
+      #-------------------------------------------------------------
+      if ($body_lines eq 0){
+        @{$w_index{$_}}[0] = $offset foreach (@prev_d_heads);
       }
-    }
+      $body_lines = 0;                  # Reset lines counter
+    } else {
+      $body_lines++;
+      @prev_d_heads =();                # Reset
+
+    }  # -- End unless /^t/
   }
   store \%w_index, $dict_idx;
   close IN;
@@ -153,20 +173,14 @@ sub dict_indexer
 
 #-----------------------------------------------------------
 
+use Unicode::Normalize;
 sub detone
 {
-  my $word = shift @_;
-  $word =~ tr/ἀἁάάὰᾶἄἂἆἅἃἇᾳᾀᾄᾂᾆᾁᾅᾃᾇΑἈἉΆΆᾺἌἊἎἍἋἏ/α/;
-  $word =~ tr/ἐἑέέὲἔἒἕἓΕἘἙΈΈῈἜἚ/ε/;
-  $word =~ tr/ἠἡήήὴῆἤἢἦἥἣἧῃᾐᾔᾒᾖᾑᾕᾓᾗΗἨἩΉΉῊἬἪἮἭἫἯ/η/;
-  $word =~ tr/ἰἱίίὶῖἴἲἶἵἳἷϊΙἸἹΊΊῚἼἺἾἽἻἿ/ι/;
-  $word =~ tr/ὀὁόόὸὄὂὅὃΟὈὉΌΌῸὌὊὍὋ/ο/;
-  $word =~ tr/ὐὑύύὺῦὔὒὖὕὓὗϋΥὙΎΎῪὝὛὟ/υ/;
-  $word =~ tr/ὠὡώώὼῶὤὢὦὥὣὧῳᾠᾡᾤᾢᾦᾥᾣᾧΩὨὩΏΏῺὬὪὮὭὫὯ/ω/;
-  $word =~ tr/ῥῤῬΡ/ρ/;
-  $word =~ tr/ΒΓΔΖΘΚΛΜΝΞΠΡΣΤΦΧΨ/βγδζθκλμνξπρστφχψ/;
-  $word =~ s/’//g;
-  return $word;
+  my $head = shift @_;
+  $head =~ s/\{+\*\}+//g;
+  $head = NFD($head);
+  $head =~ s/\pM*//g;
+  return $head;
 }
 
 #-----------------------------------------------------------

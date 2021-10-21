@@ -177,9 +177,13 @@ use Unicode::Normalize;
 sub detone
 {
   my $head = shift @_;
-  $head =~ s/\{+\*\}+//g;
+  # $head =~ s/\{+\*\}+//g;
+  $head =~ s/[\}\{\(\)\*]+//;
+  $head =~ s/[0-9]+//;
   $head = NFD($head);
   $head =~ s/\pM*//g;
+  $head = lc $head;
+  $head =~ s/\s+//;
   return $head;
 }
 

@@ -20,7 +20,7 @@ GetOptions(
 ) or &usage;                                  # Error return if otions fault
 
 &usage unless scalar(@ARGV);                  # Error return if no search term
-my $search_regex = shift @ARGV;               # Only search term left in ARGV
+my $search_regex = lc(shift @ARGV);               # Only search term left in ARGV
 
 unless (scalar @dicts){                       # Look for DSLs in the working dir
   @dicts = grep {/\.dsl/} read_dir('./');
@@ -35,8 +35,8 @@ foreach my $dict (@dicts){
   my %w_index;
   my @w_matches;
 
+  print "\x1b[33;1m$dict\x1b[0m:";
   &dict_indexer($dict) unless -e $dict_index;      # Generate index if not there
-  say "\x1b[33;1m$dict\x1b[0m";
 
   %w_index = %{retrieve($dict_index)};
   my $n = 0;                                       # Lemma counter
@@ -53,10 +53,13 @@ foreach my $dict (@dicts){
     }
     last if $n >= $max_matches;
   }
-  unless ($n){
-    print "No matches for $search_regex\n\n";
-    next;
+  if ($n){
+    print "\n";
+  } else {
+    print " -\n";
+    next;                                          # Stop if nothing in index
   }
+
   open (IN, '<', $dict_file) or die $!;
   foreach ($uc->sort( @w_matches)){
     # say $_;
@@ -79,7 +82,7 @@ foreach my $dict (@dicts){
   }
   # say foreach @w_matches;
   close IN;
-  print"\n";
+  # print"\n";
 } # --- end foreach $dic
 
 #-----------------------------------------------------------
@@ -90,17 +93,17 @@ sub colour
 {
   # $_[0] =~ s/\[c.*?\]/\x1b[36;1m/g;
   $_[0] =~ s/\[c limegreen\]/\x1b[32;1m/g;
+  $_[0] =~ s/\[c lightgreen\]/\x1b[32;1m/g;
   $_[0] =~ s/\[c darkblue\]/\x1b[34;1m/g;
   $_[0] =~ s/\[c darkmagenta\]/\x1b[35;1m/g;
   $_[0] =~ s/\[c maroon\]/\x1b[31;1m/g;
-  $_[0] =~ s/\[c gray\]/\x1b[36;1m/g;
-  $_[0] =~ s/\[c red]//g;
-  $_[0] =~ s/\[\/c\]/\x1b[0m/g;
+  $_[0] =~ s/(\[c gray\])|(\[p\])/\x1b[36;1m/g;
+  $_[0] =~ s/\[c red\]//g;
   $_[0] =~ s/\[b\]/\x1b[35;1m/g;
-  $_[0] =~ s/\[\/b\]/\x1b[0m/g;
-  $_[0] =~ s/\[\/?i\]//g;
-  $_[0] =~ s/\\\[/\[/g;
-  $_[0] =~ s/\\\]/\]/g;
+  $_[0] =~ s/\[\/[bcp]\]/\x1b[0m/g;              # Reset
+  $_[0] =~ s/\[\/?i\]//g;                        # Italics out
+  $_[0] =~ s/\\\[/\[/g;                          # \[ -> [
+  $_[0] =~ s/\\\]/\]/g;                          # \] -> ]
 
 }
 
@@ -167,7 +170,7 @@ sub dict_indexer
   }
   store \%w_index, $dict_idx;
   close IN;
-  say "$dict.dsl indexed -> $dict_idx";
+  print " (Indexed -> $dict_idx)";
   return;
 }
 

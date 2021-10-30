@@ -39,7 +39,8 @@ while(1){
   my ($offset,  $count) = unpack("N N", $bytes);  # Big endian integers
   seek $dict, $offset, 0;
   read ($dict, $definition, $count);
-  # ($headword, $definition) = &ljs($lemma);      # Uncomment for LJS
+  $definition =~ s/[\]\[]//g;
+  # ($headword, $definition) = &ljs($definition);      # Uncomment for LJS
   &colour($definition);
   say $headword;
   print "\t[m1]$definition\[/m]\n";
@@ -52,10 +53,9 @@ sub ljs {
   my $headword = $1;                     # The Greek headword
   $_[0] =~ /<def>(.*?)<\/def>/;          # Extract the definition
   my $definition = $1;
-  $definition =~ s/[\]\[]//g;
   $definition =~ s/<entryFree id=.*?Free\">//g;
   $definition =~ s/<\/entryFree>//g;
-  $definition =~ s/<\/sense>(?!$)/[\/m]\n\t[m1] [\/m]\n\t[m1]/g; # Each sense in new line
+  $definition =~ s/<\/sense>(?!$)/[\/m]\n\t[m1] [\/m]\n\t[m1]   /g; # Each sense in new line
   $definition =~ s/<dict_tr>/\[c green\]/g;   # Green English translations
   $definition =~ s/<\/dict_tr>/[\/c]/g;
   $definition =~ s/<.+?>//g;
@@ -64,7 +64,7 @@ sub ljs {
 
 sub colour{
   # Translate HTML colour markups <...> to dsl [c ...]
-  $_[0] =~ s/[\]\[]//g;
+  # $_[0] =~ s/[\]\[]//g;
   $_[0] =~ s/<\/?i>//g;
   $_[0] =~ s/<\/?b>//g;
   $_[0] =~ s/<div .*?em\">/\t[m2]  /g;

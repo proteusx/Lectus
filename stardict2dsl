@@ -1,0 +1,79 @@
+#!/usr/bin/perl -w
+# -CSDA
+use strict;
+use utf8;
+use v5.022;
+use autodie;
+
+#-------------------------------------------------------------------------------
+#     Usage: ./srardict2dsl  dictionary_base_name
+#-------------------------------------------------------------------------------
+
+# my $dict_base = 'LiddellScott1940-grc-eng';
+
+my $dict_base = shift @ARGV;
+my $idx_file = $dict_base . '.idx';
+my $dict_file = $dict_base . '.dict';
+
+open (my $idx, "< :raw", $idx_file);
+open (my $dict, "< :raw", $dict_file);
+
+$/ = "\0";                    # EOL = '\0'
+
+seek $idx,0,2;                # Size of the .idx file
+my $eof = tell $idx;
+
+seek ($idx, 0, 0);
+# foreach (1..10){
+while(1){
+  my $definition;
+  my $idx_offset = tell $idx;
+  last if $idx_offset >= $eof;   # Don't seek past EOF
+
+                              # Transliterated headword
+  my $headword = <$idx>;      # Read untill after '\0'
+                              # We read to move the file pointer
+  # say tell($idx);
+  $headword =~ s/\x00$//s;
+  read $idx, my $bytes, 8;
+  my ($offset,  $count) = unpack("N N", $bytes);  # Big endian integers
+  seek $dict, $offset, 0;
+  read ($dict, $definition, $count);
+  # ($headword, $definition) = &ljs($lemma);      # Uncomment for LJS
+  &colour($definition);
+  say $headword;
+  print "\t[m1]$definition\[/m]\n";
+}
+close ($dict);
+close ($idx);
+
+sub ljs {
+  $_[0] =~ /<headword>(.*?)<\/headword>/;
+  my $headword = $1;                     # The Greek headword
+  $_[0] =~ /<def>(.*?)<\/def>/;          # Extract the definition
+  my $definition = $1;
+  $definition =~ s/[\]\[]//g;
+  $definition =~ s/<entryFree id=.*?Free\">//g;
+  $definition =~ s/<\/entryFree>//g;
+  $definition =~ s/<\/sense>(?!$)/[\/m]\n\t[m1] [\/m]\n\t[m1]/g; # Each sense in new line
+  $definition =~ s/<dict_tr>/\[c green\]/g;   # Green English translations
+  $definition =~ s/<\/dict_tr>/[\/c]/g;
+  $definition =~ s/<.+?>//g;
+  return ($headword, $definition);
+}
+
+sub colour{
+  # Translate HTML colour markups <...> to dsl [c ...]
+  $_[0] =~ s/[\]\[]//g;
+  $_[0] =~ s/<\/?i>//g;
+  $_[0] =~ s/<\/?b>//g;
+  $_[0] =~ s/<div .*?em\">/\t[m2]  /g;
+  $_[0] =~ s/<\/div>/[\/m]/g;
+  # $_[0] =~ s/<b>/[c blue]/g;
+  # $_[0] =~ s/<\/b>/[\/c]/g;
+  $_[0] =~ s/<font color=\"(light)?green\">/[c green]/g;
+  $_[0] =~ s/<font color="red">/[c red]/g;
+  $_[0] =~ s/<font color="orange">/[c yellow]/g;
+  $_[0] =~ s/<\/font>/[\/c]/g;
+  $_[0] =~ s/<br>/[\/m]\n\t[m1]/g;
+}

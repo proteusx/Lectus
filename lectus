@@ -90,19 +90,27 @@ foreach my $dict (@dicts){
 
 sub colour
 {
-  # $_[0] =~ s/\[c.*?\]/\x1b[36;1m/g;
-  $_[0] =~ s/\[c limegreen\]/\x1b[32;1m/g;
-  $_[0] =~ s/\[c lightgreen\]/\x1b[32;1m/g;
-  $_[0] =~ s/\[c darkblue\]/\x1b[34;1m/g;
-  $_[0] =~ s/\[c darkmagenta\]/\x1b[35;1m/g;
-  $_[0] =~ s/\[c maroon\]/\x1b[31;1m/g;
-  $_[0] =~ s/(\[c gray\])|(\[p\])/\x1b[36;1m/g;
-  $_[0] =~ s/\[c red\]/\x1b[31;1m/g;
-  $_[0] =~ s/\[b\]/\x1b[35;1m/g;
-  $_[0] =~ s/\[\/[bcp]\]/\x1b[0m/g;              # Reset
+  my $reset='[0m';
+  my $red='[0;31m';
+  my $green='[0;32m';
+  my $yellow='[0;33m';
+  my $blue='[0;34m';
+  my $purple='[0;35m';
+  my $cyan='[0;36m';
+
   $_[0] =~ s/\[\/?i\]//g;                        # Italics out
-  $_[0] =~ s/\\\[/\[/g;                          # \[ -> [
-  $_[0] =~ s/\\\]/\]/g;                          # \] -> ]
+  $_[0] =~ s/\[c\s+(?:\w+?)?green\]/$green/g;
+  $_[0] =~ s/\[c\s+(?:\w+?)?blue\]/$blue/g;
+  $_[0] =~ s/\[c\s+(?:\w+?)?magenta\]/$purple/g;
+  $_[0] =~ s/\[c\s+(?:\w+?)?red\]/$red/g;
+  $_[0] =~ s/\[c maroon\]/$red/g;
+  $_[0] =~ s/(\[c gray\])|(\[p\])/$cyan/g;
+  $_[0] =~ s/\[c\s+(?:\w+?)?yellow\]/$yellow/g;
+  $_[0] =~ s/\[b\]/$yellow/g;
+  $_[0] =~ s/\[\/[bcp]\]/$reset/g;
+  $_[0] =~ s/\\\[/{/g;                          # \[ -> [
+  $_[0] =~ s/\\\]/}/g;                          # \] -> ]
+
 }
 
 #-----------------------------------------------------------

@@ -40,7 +40,7 @@ while(1){
   seek $dict, $offset, 0;
   read ($dict, $definition, $count);
   $definition =~ s/[\]\[]//g;
-  # ($headword, $definition) = &ljs($definition);      # Uncomment for LJS
+  # ($headword, $definition) = &lsj($definition);      # Uncomment for LJS
   &colour($definition);
   say $headword;
   print "\t[m1]$definition\[/m]\n";
@@ -48,7 +48,7 @@ while(1){
 close ($dict);
 close ($idx);
 
-sub ljs {
+sub lsj {
   $_[0] =~ /<headword>(.*?)<\/headword>/;
   my $headword = $1;                     # The Greek headword
   $_[0] =~ /<def>(.*?)<\/def>/;          # Extract the definition
@@ -67,7 +67,7 @@ sub colour{
   # $_[0] =~ s/[\]\[]//g;
   $_[0] =~ s/<\/?i>//g;
   $_[0] =~ s/<\/?b>//g;
-  $_[0] =~ s/<div .*?em\">/\t[m2]  /g;
+  $_[0] =~ s/<div .*?em\">/\t[m1]  /g;
   $_[0] =~ s/<\/div>/[\/m]/g;
   # $_[0] =~ s/<b>/[c blue]/g;
   # $_[0] =~ s/<\/b>/[\/c]/g;

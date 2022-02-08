@@ -34,8 +34,11 @@ while(1){
   my $headword = <$idx>;      # Read untill after '\0'
                               # We read to move the file pointer
   # say tell($idx);
+  $headword =~ s/ \p{Sc}//s;
   $headword =~ s/\x00$//s;
+  # $headword =~ s/\s.*$//;
   read $idx, my $bytes, 8;
+  # next if &clean_babylon($headword);
   my ($offset,  $count) = unpack("N N", $bytes);  # Big endian integers
   seek $dict, $offset, 0;
   read ($dict, $definition, $count);
@@ -76,4 +79,33 @@ sub colour{
   $_[0] =~ s/<font color="orange">/[c yellow]/g;
   $_[0] =~ s/<\/font>/[\/c]/g;
   $_[0] =~ s/<br>/[\/m]\n\t[m1]/g;
+}
+
+sub clean_babylon{
+  return 1 if $_[0] =~ m/[*\!)(\/\\\=']/;
+  return 1 if $_[0] =~ m/Ἅιδῃ/;
+  return 1 if $_[0] =~ m/Ἅιδην/;
+  return 1 if $_[0] =~ m/Ἅιδης/;
+  return 1 if $_[0] =~ m/Ἄιδι/;
+  return 1 if $_[0] =~ m/Ἄιδος/;
+  return 1 if $_[0] =~ m/Ἅιδου/;
+  return 1 if $_[0] =~ m/Ἀιδωνεῖ/;
+  return 1 if $_[0] =~ m/Ἀιδωνεῦ/;
+  return 1 if $_[0] =~ m/Ἀιδωνεύς/;
+  return 1 if $_[0] =~ m/Ἀιδωνέως/;
+  return 1 if $_[0] =~ m/Ἀιδωνῆος/;
+  return 1 if $_[0] =~ m/Ἀινέα/;
+  return 1 if $_[0] =~ m/Ἁλοσύδναι/;
+  return 1 if $_[0] =~ m/Ἁλοσύδνη/;
+  return 1 if $_[0] =~ m/Ἁλοσύδνην/;
+  return 1 if $_[0] =~ m/Ἁλοσύδνης/;
+  return 1 if $_[0] =~ m/Ἄτλαν/;
+  return 1 if $_[0] =~ m/Ὀικλέα/;
+  return 1 if $_[0] =~ m/Ὀικλέος/;
+  return 1 if $_[0] =~ m/Ὀικλέους/;
+  return 1 if $_[0] =~ m/Ὀικλῆς/;
+  return 1 if $_[0] =~ m/Ὀιλεύς/;
+  return 1 if $_[0] =~ m/Ὀιλέως/;
+  return 1 if $_[0] =~ m/Ὀιλιάδην/;
+  return 0;
 }

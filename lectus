@@ -7,7 +7,9 @@ use Unicode::Collate;
 use Storable;
 use File::Slurp qw(read_dir);
 use Getopt::Long;
+# use Time::HiRes qw(gettimeofday tv_interval);
 
+# my $start_time = [gettimeofday];
 &usage unless scalar(@ARGV);                  # Error return if no args at all
 my $uc = Unicode::Collate->new();
 
@@ -28,67 +30,69 @@ unless (scalar @dicts){                       # Look for DSLs in the working dir
 }
 
 my $max_matches = 20;                          # Maximum lemata to return
+
 my $lemma;
+unless ($regex_flag){
+  $lemma = qr/^$search_regex-?\d?$/;
+}else{
+  $lemma = qr/$search_regex/;
+}
+
 foreach my $dict (@dicts){
   my $dict_file = $dict . '.dsl';
   my $dict_index = $dict.'.idx';
   my %w_index;
-  my @w_matches;
 
   &dict_indexer($dict) unless -e $dict_index;      # Generate index if not there
 
   %w_index = %{retrieve($dict_index)};
-  my $n = 0;                                       # Lemma counter
-  foreach my $d_head ( keys %w_index){
-    unless ($regex_flag){
-      $lemma = qr/^$search_regex-?\d?$/;
-    }else{
-      $lemma = qr/$search_regex/;
-    }
-    # say $lemma; die;
-    if ($d_head =~ m/$lemma/){
-        push @w_matches, $d_head;
-        $n++;
-    }
-    last if $n >= $max_matches;
-  }
-  if ($n){
+
+  # my $load_time = [gettimeofday];
+
+  my %w_matches = map { $_ => $w_index{$_} }  grep {/$lemma/} keys %w_index;
+  if (scalar keys %w_matches){
     print "\x1b[33;1m$dict\x1b[0m:\n";
   } else {
     print "\x1b[33;1m$dict\x1b[0m: -\n";
     next;                                         # Stop if nothing in index
   }
+  # my $search_time = [gettimeofday];
 
   open (IN, '<', $dict_file) or die $!;
-  foreach ($uc->sort( @w_matches)){
-    # say $_;
-    my ($idx, $word) = @{$w_index{$_}};            # [index, word]
+  foreach ( $uc->sort(keys %w_matches) ){
+    my ($idx, $word) = @{$w_matches{$_}};            # [index, word]
     seek IN, $idx, 0;
     my $body = "";
     while(1){
       my $line = <IN> ;
-      last unless $line =~ /\t\[m\d\]/;
+      last unless $line =~ /\t\[m\d?\]/;
       $line =~ s/\s*\[\/?m\d?\]//g;
       # chomp $line;
       $body .= $line;
     }
     # $body =~ s/\s*\[\/?m\d?\]//g;
-    &colour($body);                                # Markups -> colour
+    &colour_Ansi($body);                                # Markups -> colour
+    # say $body; die;
     # &decolour($body);                            # Remove colour markups.
 
     print "\x1b[35;1m", $word, "\x1b[0m", ": ";
     print "$body\n";
   }
-  # say foreach @w_matches;
+    # my $seek_time = [gettimeofday];
+    # say "--------------------------------------";
+    # printf("Load Time:             %.4f sec\n", tv_interval($start_time, $load_time));
+    # printf("Headword Search Time:  %.4f sec\n", tv_interval( $load_time, $search_time));
+    # printf("Explanation Seek Time: %.4f sec\n", (tv_interval $search_time, $seek_time));
+    # printf("Total Time:            %.4f sec\n", (tv_interval $start_time, $seek_time));
+    # say "--------------------------------------";
   close IN;
-  # print"\n";
 } # --- end foreach $dic
 
 #-----------------------------------------------------------
 #               Subroutines
 #-----------------------------------------------------------
 
-sub colour
+sub colour_Ansi
 {
   my $reset='[0m';
   my $red='[0;31m';
@@ -102,12 +106,17 @@ sub colour
   $_[0] =~ s/\[c\s+(?:\w+?)?green\]/$green/g;
   $_[0] =~ s/\[c\s+(?:\w+?)?blue\]/$blue/g;
   $_[0] =~ s/\[c\s+(?:\w+?)?magenta\]/$purple/g;
+  $_[0] =~ s/\[c\s+(?:\w+?)?purple\]/$purple/g;
   $_[0] =~ s/\[c\s+(?:\w+?)?red\]/$red/g;
   $_[0] =~ s/\[c maroon\]/$red/g;
   $_[0] =~ s/(\[c gray\])|(\[p\])/$cyan/g;
   $_[0] =~ s/\[c\s+(?:\w+?)?yellow\]/$yellow/g;
   $_[0] =~ s/\[b\]/$yellow/g;
+  $_[0] =~ s/\[ref]/$cyan/g;
   $_[0] =~ s/\[\/[bcp]\]/$reset/g;
+  $_[0] =~ s/\[\/ref]/$reset/g;
+  $_[0] =~ s/\\</</g;
+  $_[0] =~ s/\\>/>/g;
   $_[0] =~ s/\\\[/{/g;                          # \[ -> [
   $_[0] =~ s/\\\]/}/g;                          # \] -> ]
 
@@ -144,7 +153,7 @@ sub dict_indexer
       push @prev_d_heads, $d_head;
       $offset = tell(IN);
       $head = $_;
-      $head =~ s/(\n|\r)//g;    # Need this for DOS \n\r. chomp leaves \r
+      $head =~ s/(\n|\r)//g;    # Need this for DOS \n\r. Chomp leaves \r
       $head =~ s/\x{feff}//;
       $d_head = &detone($head);
       unless (exists $w_index{$d_head}){

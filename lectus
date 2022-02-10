@@ -67,19 +67,17 @@ foreach my $dict (@dicts){
     seek IN, $idx, 0;
     my $body = "";
     while(1){
-      my $indent = "";
+      my $indent = 1;                                # default value
       my $line = <IN> ;
       last unless $line =~ /\t(?:\[(m\d?)\])?/;
       my $level = $1;
-      if  ( (!$level) || ($level eq 'm')) {
-        $indent = 1   ;
-      }
-      else
+      if ($level)
       {
         $indent = 1 if $level eq 'm0';
         $indent = 2 if $level eq 'm1';
         $indent = 4 if $level eq 'm2';
         $indent = 8 if $level eq 'm3';
+        $indent = 10 if $level eq 'm4';
       }
       $line =~ s/\s*\[\/?m\d?\]//g;
       &colour_Ansi($line);                                # Markups -> colour

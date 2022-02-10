@@ -15,17 +15,19 @@ my $uc = Unicode::Collate->new();
 
 my $regex_flag = 0;
 my @dicts;
+my $dir = './';
 
 GetOptions(
   'regex!'                => \$regex_flag,
-  'dictionaries=s{1,}'    => \@dicts,
+  'lexica=s{1,}'          => \@dicts,
+  'directory=s'           => \$dir,
 ) or &usage;                                  # Error return if otions fault
-
+$dir =~ s/$/\// unless $dir =~ m/\/$/;
 &usage unless scalar(@ARGV);                  # Error return if no search term
 my $search_regex = &detone(lc(shift @ARGV));  # Only the search term is left in ARGV
 
 unless (scalar @dicts){                       # Look for DSLs in the working dir
-  @dicts = grep {/\.dsl/} read_dir('./');
+  @dicts = grep {/\.dsl/} read_dir("$dir");
   @dicts = map { (my $s = $_) =~ s/\.dsl//; $s} @dicts;
 }
 
@@ -39,8 +41,9 @@ unless ($regex_flag){
 }
 
 foreach my $dict (@dicts){
+  $dict = $dir . $dict;
   my $dict_file = $dict . '.dsl';
-  my $dict_index = $dict.'.idx';
+  my $dict_index = $dict . '.idx';
   my %w_index;
 
   &dict_indexer($dict) unless -e $dict_index;      # Generate index if not there
@@ -64,16 +67,25 @@ foreach my $dict (@dicts){
     seek IN, $idx, 0;
     my $body = "";
     while(1){
+      my $indent = "";
       my $line = <IN> ;
-      last unless $line =~ /\t\[m\d?\]/;
+      last unless $line =~ /\t(?:\[(m\d?)\])?/;
+      my $level = $1;
+      if  ( (!$level) || ($level eq 'm')) {
+        $indent = 1   ;
+      }
+      else
+      {
+        $indent = 1 if $level eq 'm0';
+        $indent = 2 if $level eq 'm1';
+        $indent = 4 if $level eq 'm2';
+        $indent = 8 if $level eq 'm3';
+      }
       $line =~ s/\s*\[\/?m\d?\]//g;
-      # chomp $line;
-      $body .= $line;
+      &colour_Ansi($line);                                # Markups -> colour
+      $body .= ( ' ' x $indent) . $line;
     }
     # $body =~ s/\s*\[\/?m\d?\]//g;
-    &colour_Ansi($body);                                # Markups -> colour
-    # say $body; die;
-    # &decolour($body);                            # Remove colour markups.
 
     print "\x1b[35;1m", $word, "\x1b[0m", ": ";
     print "$body\n";
@@ -109,7 +121,8 @@ sub colour_Ansi
   $_[0] =~ s/\[c\s+(?:\w+?)?purple\]/$purple/g;
   $_[0] =~ s/\[c\s+(?:\w+?)?red\]/$red/g;
   $_[0] =~ s/\[c maroon\]/$red/g;
-  $_[0] =~ s/(\[c gray\])|(\[p\])/$cyan/g;
+  # $_[0] =~ s/(\[c gray\])|(\[p\])/$cyan/g;
+  $_[0] =~ s/(\[c\s+(?:\w+?)?gray\])|(\[p\])/$cyan/g;
   $_[0] =~ s/\[c\s+(?:\w+?)?yellow\]/$yellow/g;
   $_[0] =~ s/\[b\]/$yellow/g;
   $_[0] =~ s/\[ref]/$cyan/g;
@@ -117,6 +130,10 @@ sub colour_Ansi
   $_[0] =~ s/\[\/ref]/$reset/g;
   $_[0] =~ s/\\</</g;
   $_[0] =~ s/\\>/>/g;
+  $_[0] =~ s!\[/?ex]!!g;
+  $_[0] =~ s!\[/?trn]!!g;
+  $_[0] =~ s!\[/?lang(?: id=\d+)?]!!g;
+  $_[0] =~ s!\[/?c(?: [a-z]+)?\]!!g;
   $_[0] =~ s/\\\[/{/g;                          # \[ -> [
   $_[0] =~ s/\\\]/}/g;                          # \] -> ]
 
@@ -185,7 +202,7 @@ sub dict_indexer
   }
   store \%w_index, $dict_idx;
   close IN;
-  print " (Indexed -> $dict_idx)";
+  print " (Indexed -> $dict_idx)\n";
   return;
 }
 
@@ -196,7 +213,7 @@ sub detone
 {
   my $head = shift @_;
   # $head =~ s/\{+\*\}+//g;
-  $head =~ s/[\}\{\(\)\*]+//;
+  $head =~ s/[\}\{\(\)\*\]\[\\]+//g;
   $head =~ s/[0-9]+//;
   $head = NFD($head);
   $head =~ s/\pM*//g;
@@ -213,12 +230,13 @@ sub usage
   +--------------------------------------------------------------------------+
   |                                                                          |
   |                                                                          |
-  |     Usage:  ./lectus <lemma> [option]                                    |
+  |     Usage:  ./lectus <lemma>  [option]                                   |
   |                                                                          |
   |     OPTIONS:                                                             |
   |     -r or --regex               Toggle search by regular expression      |
-  |     -d or --dictionaries        Space separated list of dictionaries     |
-  |                                                                          |
+  |     -l or --lexica              Space separated list of dictionaries     |
+  |     -d or --directory           Path to the dictionaries directory       |
+  |                                 Default directory path:  ./              |
   |                                                                          |
   +--------------------------------------------------------------------------+
 EOT

@@ -42,7 +42,9 @@ OPTIONS::
 
 
        -r or --regex               Toggle search by regular expression
-       -d or --dictionaries        Space separated list of dictionaries
+       -l or --lexica              Space separated list of dictionaries
+       -d or --directory           Path to the dictionaries directory
+                                   ( default directory ./)
 
 If option ``-r`` is given then ``LEMMA`` is assumed to be a regular expression otherwise
 Lectus will look for an exact match.
@@ -57,7 +59,7 @@ ________
 Assuming that you have a copy or a link to the Photius_ lexicon
 (file ``photius.dsl``), to search for the lemma ``κηπος``::
 
-      lectus  κηπος -d photius
+      lectus  κηπος -l photius
 
 This will return the meaning of the exact word ``κηπος``. The search term must be typed without accents.
 Searching is always case insensitive.
@@ -68,7 +70,7 @@ To search all dictionaries for the word ``κηπος``::
 
 The search term can be a regular expression like::
 
-  lectus κ.*ος -r -d photius
+  lectus κ.*ος -r -l photius
 
 Will return all words that include strings that start with a "**κ**" followed by any number
 of characters and end with a "**ς**".
@@ -76,7 +78,7 @@ of characters and end with a "**ς**".
 To search the Suda_ lexicon (file ``suda.dsl``) for words like
 ``κῆπος`` and ``κῆτος``::
 
- lectus \^κη\(π\|τ\)ος -r -d suda
+ lectus \^κη\(π\|τ\)ος -r -l suda
 
 Any Perl like regular expression is acceptable input, provided that symbols that are
 significant to the shell, like ``^,|,(,)``, etc. are escaped with a "\\".

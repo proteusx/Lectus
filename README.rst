@@ -49,9 +49,9 @@ OPTIONS::
 If option ``-r`` is given then ``LEMMA`` is assumed to be a regular expression otherwise
 Lectus will look for an exact match.
 
-If option ``-d`` is given and it is followed by one or more dictionary names, these will be
-searched, otherwise all dictionaries present in the current working directory
-(CWD) will be searched in sequence.
+If option ``-l`` is given and it is followed by one or more dictionary names, these will be
+searched, otherwise all dictionaries present in the specified directory, or in the
+default current working directory (CWD), will be searched in sequence.
 
 Examples
 ________

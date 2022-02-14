@@ -1,0 +1,86 @@
+* {
+    /* background: #c6bbb3; */
+    background: #fefdeb;
+  }
+
+hr {
+  height: 8px;
+  color: #c6abb3;
+  background-color: #c6abb3;
+}
+
+h1 {
+  text-align: center;
+}
+.form-lectus{
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+.search-box{
+  margin: 10px;
+  border: 3px;
+}
+.dictionaries{
+  margin: 10px;
+  border: 3px;
+}
+.dic-selector{
+  /* appearance: none; */
+  background-color: #fefdeb;
+  border: none;
+  /* height: 220px; */
+}
+optgroup {
+   font-weight: bold;
+   font-style: normal;
+   padding-left: 5px;
+   padding-right: 5px;
+   /* padding-bottom: 10px; */
+}
+optgroup[label]{
+    text-align: center;
+    /* padding-bottom: 4em; */
+    color: #c6aab3;
+}
+select option{
+  color: black;
+  padding-left:10px;
+  padding-bottom: 3px;
+  /* background-color: yellow; */
+  border: outset;
+  border-radius: 15%;
+  border-color: #c6abb3;
+  text-align: left;
+}
+/* option { */
+/*     color: black; */
+/*     background-color: yellow; */
+/* } */
+.separator{
+  height: 3px;
+  width: 33%;
+  background: #c6bbb3;
+  text-align: left;
+  margin-left: 0;
+}
+
+/* Indentations */
+
+:root {--ind: 2%}
+
+.m0 {
+  margin-left: var(--ind);
+}
+.m1 {
+  margin-left: calc(var(--ind) + 2%);
+}
+.m2 {
+  margin-left: calc(var(--ind) + 3%);
+}
+.m3 {
+  margin-left: calc(var(--ind) + 4%);
+}
+.m4 {
+  margin-left: calc(var(--ind) + 5%);
+}

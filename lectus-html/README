@@ -1,0 +1,7 @@
+Experimental web server for Lectus.
+
+To start: python -m http.server --cgi
+
+Point a web browser to localhost:8000
+
+Best results with Mozilla Firefox

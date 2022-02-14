@@ -84,3 +84,12 @@ select option{
 .m4 {
   margin-left: calc(var(--ind) + 5%);
 }
+.m5 {
+  margin-left: calc(var(--ind) + 6%);
+}
+.m5 {
+  margin-left: calc(var(--ind) + 7%);
+}
+.m6 {
+  margin-left: calc(var(--ind) + 8%);
+}

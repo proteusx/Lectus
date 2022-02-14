@@ -15,6 +15,9 @@ my $uc = Unicode::Collate->new();
 my $cgi = CGI->new();
 
 #------------------------------------------------------------------------------
+#  Default Dictionaries location
+#  See also same variable in lectus.cgi
+my $dict_dir = "./dictionaries";
 #------------------------------------------------------------------------------
 
 my $header = q{
@@ -46,7 +49,6 @@ my $results = q{
         <div id="result"></div>
 };
 #------------------------------------------------------------------------------
-my $dict_dir = "./dictionaries";
 my $dir_input = qq{
   <div class="input-dir">
     <input type="text" id="dir" name="dir" class="dir" value=$dict_dir>
@@ -55,19 +57,13 @@ my $dir_input = qq{
 };
 #------------------------------------------------------------------------------
 
-# my @dicts = qw/dict1 dict2 dict3/;
 my  @dicts = grep {/\.dsl/} read_dir($dict_dir);
 @dicts = map { (my $s = $_) =~ s/\.dsl//; $s} @dicts;
 
-# my $dic_select = q{ <div style="height: 250px;">
-#         <label style="vertical-align: 100%;" for="dicts">Dictionaries</label>
-#         <select style="height: 250px;" name="dicts" id="dicts" multiple >
-#         };
 my $dic_select = q{ <div class="dictionaries">
         <select class="dic-selector" name="dicts" id="dicts" multiple size=7>
         <optgroup label="Dictionaries">
         };
-        # <option value="" style="font-weight: bold;">  -- Dictionaries -- </oprion>
 foreach my $dict (@dicts){
   $dic_select .= qq{<option value="$dict" selected>$dict</option>\n};
 }
@@ -78,21 +74,3 @@ $page .= $results;
 $page .= '<script src="/lectus.js"></script>';
 $page .= $cgi->end_html;
 say $page;
-
-__DATA__
-# unless (scalar @dicts){                       # Look for DSLs in the working dir
-# }
-# $header .= "<br> **** $Bin<br>  ";
-# say $RealBin;
-# $header .= "$_<br>" foreach read_dir('./');
-# my $header = read_file('/cgi-bin/header.cgi');
-# say $header;
-# say getcwd();
-# my $dic_select;
-# say $cgi->start_form;
-# require "./header.cgi";
-# my ($header, $form, $results);
-# $header = $cgi->start_html;
-# my $dir = $Bin;
-# my $vars = read_file($dir . '/header.cgi');
-# eval $vars;

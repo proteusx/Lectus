@@ -13,10 +13,13 @@ use CGI qw( -debug );
 binmode(STDOUT, "encoding(UTF-8)");
 my $uc = Unicode::Collate->new();
 $| = 1;
-my $dict_dir = "./dictionaries";
-# $CGI::LIST_CONTEXT_WARN = 0;   # No security warnings
-my $cgi = CGI->new();
 
+#  Default Dictionaries location
+#  See also same variable in form.cgi
+my $dict_dir = "./dictionaries";
+
+
+my $cgi = CGI->new();
 my $dir = $cgi->param('dir');
 $dict_dir = $dir if $dir;
 my $lemma_param = $cgi->param('lemma');
@@ -59,7 +62,6 @@ foreach my $dict (@dicts){
   } else {
     $doc .= "<b>$dict:</b> -<br>";
     $doc .= '<hr class="separator">';
-    # $doc .= '<hr style="height: 1px; background: #c6bbb3">';
     next;                                         # Stop if nothing in index
   }
 
@@ -84,11 +86,9 @@ foreach my $dict (@dicts){
       }
       $line =~ s!(?:\[/m\])|$!</p>!g;
       # die $line;
-      # chomp $line;
       $body .= $line; # . '<br>';
     }
     # $body =~ s/\s*\[\/?m\d?\]//g;
-    # &colour_Ansi($body);                                # Markups -> colour
     &colour_html($body);
     # &decolour($body);                            # Remove colour markups.
 
@@ -96,7 +96,6 @@ foreach my $dict (@dicts){
     $doc .=  "$body<br>";
   } # --- End foreach keys
   $doc .=  '<br> <br>';
-  # $doc .=  '<br> <hr style="height: 8px; background: #c6abb3">';
   close IN;
 } # --- End foreach $dic
 say $doc;
@@ -105,32 +104,6 @@ say $doc;
 #               Subroutines
 #-----------------------------------------------------------
 
-sub colour_Ansi
-{
-  my $reset='[0m';
-  my $red='[0;31m';
-  my $green='[0;32m';
-  my $yellow='[0;33m';
-  my $blue='[0;34m';
-  my $purple='[0;35m';
-  my $cyan='[0;36m';
-
-  $_[0] =~ s/\[\/?i\]//g;                        # Italics out
-  $_[0] =~ s/\[c\s+(?:\w+?)?green\]/$green/g;
-  $_[0] =~ s/\[c\s+(?:\w+?)?blue\]/$blue/g;
-  $_[0] =~ s/\[c\s+(?:\w+?)?magenta\]/$purple/g;
-  $_[0] =~ s/\[c\s+(?:\w+?)?red\]/$red/g;
-  $_[0] =~ s/\[c maroon\]/$red/g;
-  $_[0] =~ s/(\[c gray\])|(\[p\])/$cyan/g;
-  $_[0] =~ s/\[c\s+(?:\w+?)?yellow\]/$yellow/g;
-  $_[0] =~ s/\[b\]/$yellow/g;
-  $_[0] =~ s/\[\/[bcp]\]/$reset/g;
-  $_[0] =~ s/\\\[/{/g;                          # \[ -> [
-  $_[0] =~ s/\\\]/}/g;                          # \] -> ]
-
-}
-
-#-----------------------------------------------------------
 sub colour_html
 {
   # $_[0] =~ s/\[c\s(\w+?)\]/<span style="color: $1;">/g;
@@ -233,22 +206,3 @@ sub detone
   return $head;
 }
 
-#-----------------------------------------------------------
-
-sub usage
-{
-  print << 'EOT';
-  +--------------------------------------------------------------------------+
-  |                                                                          |
-  |                                                                          |
-  |     Usage:  ./lectus <lemma> [option]                                    |
-  |                                                                          |
-  |     OPTIONS:                                                             |
-  |     -r or --regex               Toggle search by regular expression      |
-  |     -d or --dictionaries        Space separated list of dictionaries     |
-  |                                                                          |
-  |                                                                          |
-  +--------------------------------------------------------------------------+
-EOT
-die;
-}

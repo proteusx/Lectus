@@ -67,7 +67,7 @@ select option{
 
 /* Indentations */
 
-:root {--ind: 2%}
+:root {--ind: 1%}
 
 .m0 {
   margin-left: var(--ind);

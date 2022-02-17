@@ -28,18 +28,20 @@ unless ($lemma_param){
   say "Enter something!";
   exit;
 }
-# die $dict_dir;
-my $search_regex = &detone(lc decode('UTF-8', $lemma_param));
+# my $search_regex = &detone(lc decode('UTF-8', $lemma_param));
 my $regex_flag = 0;
 $regex_flag = $cgi->param('regex');
 my $idx_dir  = "./idx";
 my @dicts = split(/,/, $cgi->param('dicts'));
 
 my $max_matches = 20;                          # Maximum lemata to return
+my $search_regex;
 my $lemma;
 unless ($regex_flag =~m/true/i){
+   $search_regex = &detone(lc decode('UTF-8', $lemma_param));
   $lemma = qr/^$search_regex-?\d?$/;
 }else{
+  $search_regex = lc decode('UTF-8', $lemma_param);
   $lemma = qr/$search_regex/;
 }
 print $cgi->header(-charset => "UTF-8");
@@ -160,21 +162,26 @@ sub dict_indexer
       $head = $_;
       $head =~ s/(\n|\r)//g;    # Need this for DOS \n\r. chomp leaves \r
       $head =~ s/\x{feff}//;
-      $d_head = &detone($head);
-      unless (exists $w_index{$d_head}){
-        $w_index{$d_head} = [$offset, $head];
-      }else{
-        if (exists($dups{$d_head})){
-          $dups{$d_head}++;
-          $w_index{$d_head . "-" ."$dups{$d_head}"} = [$offset, $head];
+      my @heads = split /\s+/, $head;
+      foreach (@heads){
+        next if m/and/i;
+        $d_head = &detone($_);
+        # $d_head = &detone($head);
+        unless (exists $w_index{$d_head}){
+          $w_index{$d_head} = [$offset, $head];
         }else{
-          $dups{$d_head} = 1;
-          $w_index{$d_head . "-1"} = [$offset, $head];
+          if (exists($dups{$d_head})){
+            $dups{$d_head}++;
+            $w_index{$d_head . "-" ."$dups{$d_head}"} = [$offset, $head];
+          }else{
+            $dups{$d_head} = 1;
+            $w_index{$d_head . "-1"} = [$offset, $head];
+          }
         }
-      }  # -- End unless exists
+      }
 
       #-------------------------------------------------------------
-      #      Offsets of bodyless lemmata are set to the first
+      #      Offsets of bodyless lemmata are set to the next
       #      lemma that has a body.  Good for Beeks but may give
       #      silly results in other dictionaries
       #-------------------------------------------------------------
@@ -202,7 +209,8 @@ sub detone
   my $head = shift @_;
   # $head =~ s/\{+\*\}+//g;
   $head =~ s/[\}\{\(\)\*]+//;
-  $head =~ s/[0-9]+//;
+  $head =~ s/[0-9]+?\.?//g;
+  # $head =~ s/[0-9]+//;
   $head = NFD($head);
   $head =~ s/\pM*//g;
   $head = lc $head;

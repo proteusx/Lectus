@@ -15,19 +15,20 @@ my $uc = Unicode::Collate->new();
 
 my $regex_flag = 0;
 my @dicts;
-my $dir = './';
+my $dict_dir = "./dictionaries";
+my $idx_dir = "./idx/";
 
 GetOptions(
   'regex!'                => \$regex_flag,
   'lexica=s{1,}'          => \@dicts,
-  'directory=s'           => \$dir,
+  'directory=s'           => \$dict_dir,
 ) or &usage;                                  # Error return if otions fault
-$dir =~ s/$/\// unless $dir =~ m/\/$/;
+$dict_dir =~ s/$/\// unless $dict_dir =~ m/\/$/;
 &usage unless scalar(@ARGV);                  # Error return if no search term
 my $search_regex = &detone(lc(shift @ARGV));  # Only the search term is left in ARGV
 
 unless (scalar @dicts){                       # Look for DSLs in the working dir
-  @dicts = grep {/\.dsl/} read_dir("$dir");
+  @dicts = grep {/\.dsl/} read_dir("$dict_dir");
   @dicts = map { (my $s = $_) =~ s/\.dsl//; $s} @dicts;
 }
 
@@ -41,9 +42,9 @@ unless ($regex_flag){
 }
 
 foreach my $dict (@dicts){
-  $dict = $dir . $dict;
-  my $dict_file = $dict . '.dsl';
-  my $dict_index = $dict . '.idx';
+  # $dict = $dict_dir . $dict;
+  my $dict_file = $dict_dir . $dict . '.dsl';
+  my $dict_index = $idx_dir . $dict . '.idx';
   my %w_index;
 
   &dict_indexer($dict) unless -e $dict_index;      # Generate index if not there
@@ -151,7 +152,8 @@ sub decolour
 sub dict_indexer
 {
   my $dict = shift @_;
-  my $dict_idx = $dict . '.idx';
+  my $dict_idx = $idx_dir . $dict . '.idx';
+  my $dict_file = $dict_dir . $dict . '.dsl';
 
   my %w_index;
   my %dups;
@@ -160,28 +162,32 @@ sub dict_indexer
   my $d_head;
   my $body_lines = 1;
   my @prev_d_heads= ();       # Store detoned heads for bodyless lemmata
-  open (IN, '<', $dict . '.dsl') or die $!;
+  open (IN, '<', $dict_file) or die $!;
   while (<IN>) {
     next if /#/;
     next if /^\s*$/;
     unless (/^\t/){
       push @prev_d_heads, $d_head;
       $offset = tell(IN);
-      $head = $_;
+      my $head = $_;
       $head =~ s/(\n|\r)//g;    # Need this for DOS \n\r. Chomp leaves \r
       $head =~ s/\x{feff}//;
-      $d_head = &detone($head);
-      unless (exists $w_index{$d_head}){
-        $w_index{$d_head} = [$offset, $head];
-      }else{
-        if (exists($dups{$d_head})){
-          $dups{$d_head}++;
-          $w_index{$d_head . "-" ."$dups{$d_head}"} = [$offset, $head];
+      my @heads = split /\s+/, $head;
+      foreach (@heads){
+        next if m/and/i;
+        $d_head = &detone($_);
+        unless (exists $w_index{$d_head}){
+          $w_index{$d_head} = [$offset, $head];
         }else{
-          $dups{$d_head} = 1;
-          $w_index{$d_head . "-1"} = [$offset, $head];
-        }
-      }  # -- End unless exists
+          if (exists($dups{$d_head})){
+            $dups{$d_head}++;
+            $w_index{$d_head . "-" ."$dups{$d_head}"} = [$offset, $head];
+          }else{
+            $dups{$d_head} = 1;
+            $w_index{$d_head . "-1"} = [$offset, $head];
+          }
+        }  # -- End unless exists
+      }
 
       #-------------------------------------------------------------
       #      Offsets of bodyless lemmata are set to the first
@@ -212,7 +218,7 @@ sub detone
   my $head = shift @_;
   # $head =~ s/\{+\*\}+//g;
   $head =~ s/[\}\{\(\)\*\]\[\\]+//g;
-  $head =~ s/[0-9]+//;
+  $head =~ s/[0-9]+?\.?//g;
   $head = NFD($head);
   $head =~ s/\pM*//g;
   $head = lc $head;

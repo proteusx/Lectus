@@ -5,8 +5,9 @@ use utf8;
 use v5.022;
 use Unicode::Collate;
 use Storable;
-use File::Slurp qw(read_dir);
+use File::Slurp;                          # qw(read_dir);
 use Getopt::Long;
+use Data::Dumper;
 # use Time::HiRes qw(gettimeofday tv_interval);
 
 # my $start_time = [gettimeofday];
@@ -31,6 +32,11 @@ unless (scalar @dicts){                       # Look for DSLs in the working dir
   @dicts = grep {/\.dsl/} read_dir("$dict_dir");
   @dicts = map { (my $s = $_) =~ s/\.dsl//; $s} @dicts;
 }
+# my $rc_file = "lectusrc";
+# write_file(
+#   $rc_file, Data::Dumper->Dump ( [ \@dicts, $dict_dir], ['dicts', 'dicts_dir'] )
+# );
+# exit;
 
 my $max_matches = 20;                          # Maximum lemata to return
 
@@ -129,6 +135,7 @@ sub colour_Ansi
   $_[0] =~ s/\[\/ref]/$reset/g;
   $_[0] =~ s/\\</</g;
   $_[0] =~ s/\\>/>/g;
+  $_[0] =~ s/\\~/~/g;
   $_[0] =~ s!\[/?ex]!!g;
   $_[0] =~ s!\[/?trn]!!g;
   $_[0] =~ s!\[/?lang(?: id=\d+)?]!!g;

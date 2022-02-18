@@ -1,0 +1,9 @@
+@dicts = (
+           'babylon',
+           'brill',
+           'magnum',
+           'middle',
+           'pape',
+           'photius',
+           'suda',
+         );

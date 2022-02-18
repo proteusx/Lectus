@@ -20,6 +20,20 @@ my $cgi = CGI->new();
 my $dict_dir = "./dictionaries";
 #------------------------------------------------------------------------------
 
+my $rc_file = 'lectusrc';
+my @dicts;
+
+if (-e $rc_file)
+{
+  eval(read_file($rc_file));  # read home defaults
+}
+else
+{
+  @dicts = grep {/\.dsl/} read_dir($dict_dir);
+  @dicts = map { (my $s = $_) =~ s/\.dsl//; $s} @dicts;
+}
+
+
 my $header = q{
 <!DOCTYPE html>
 <html lang="el">
@@ -56,9 +70,6 @@ my $dir_input = qq{
   </div>
 };
 #------------------------------------------------------------------------------
-
-my  @dicts = grep {/\.dsl/} read_dir($dict_dir);
-@dicts = map { (my $s = $_) =~ s/\.dsl//; $s} @dicts;
 
 my $dic_select = q{ <div class="dictionaries">
         <select class="dic-selector" name="dicts" id="dicts" multiple size=7>

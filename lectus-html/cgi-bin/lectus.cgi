@@ -21,7 +21,7 @@ my $dict_dir = "./dictionaries";
 
 my $cgi = CGI->new();
 my $dir = $cgi->param('dir');
-$dict_dir = $dir if $dir;
+# $dict_dir = $dir if defined $dir;
 my $lemma_param = $cgi->param('lemma');
 unless ($lemma_param){
   print $cgi->header(-charset => "UTF-8");

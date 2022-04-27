@@ -1,7 +1,7 @@
-* {
-    /* background: #c6bbb3; */
-    background: #fefdeb;
-  }
+/* * { */
+/*     /1* background: #c6bbb3; *1/ */
+/*     background: #fefdeb; */
+/*   } */
 
 hr {
   height: 8px;
@@ -11,6 +11,7 @@ hr {
 
 h1 {
   text-align: center;
+  font-variant: small-caps;
 }
 .form-lectus{
   display: flex;
@@ -30,6 +31,12 @@ h1 {
   background-color: #fefdeb;
   border: none;
   /* height: 220px; */
+}
+.input-dir{
+  text-align: right;
+  color: grey;
+  font-size: 75%;
+  margin: 5px;
 }
 optgroup {
    font-weight: bold;
@@ -52,6 +59,7 @@ select option{
   border-radius: 15%;
   border-color: #c6abb3;
   text-align: left;
+  /* transition: 250ms ease-in-out; */
 }
 /* option { */
 /*     color: black; */
@@ -63,6 +71,14 @@ select option{
   background: #c6bbb3;
   text-align: left;
   margin-left: 0;
+}
+.result {
+  /* background-color: #d6d2d0; */
+  /* background-color: #ece8be; */
+  background-color: #fefdeb;
+  border-color: #fefdeb;
+  border-radius: 1%;
+  padding: 2%;
 }
 
 /* Indentations */

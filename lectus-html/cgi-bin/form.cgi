@@ -44,7 +44,7 @@ my $header = q{
 </head>
 <body>
   <h1>
-    Lectus
+    LectuS
   </h1>
   };
 my $form = q{
@@ -60,13 +60,14 @@ my $form = q{
       </div>
 };
 my $results = q{
-        <div id="result"></div>
+        <div id="result" class="result"></div>
 };
 #------------------------------------------------------------------------------
 my $dir_input = qq{
   <div class="input-dir">
-    <input type="text" id="dir" name="dir" class="dir" value=$dict_dir>
-    <button disabled>Enter</button>
+     <p class="dir-text">Dictionaries Directory: $dict_dir</p>
+    <!--- <input type="text" id="dir" name="dir" class="dir" value=$dict_dir> --->
+    <!--- <button disabled>Enter</button> --->
   </div>
 };
 #------------------------------------------------------------------------------
@@ -79,9 +80,11 @@ foreach my $dict (@dicts){
   $dic_select .= qq{<option value="$dict" selected>$dict</option>\n};
 }
 
-my $page = $header . $form . $dir_input . $dic_select . '</optgroup></select></div>';
+my $page = $header . $form . $dic_select . '</optgroup></select>';
+$page .= '</div>';
 $page .= $cgi->end_form;
 $page .= $results;
+$page .= $dir_input;
 $page .= '<script src="/lectus.js"></script>';
 $page .= $cgi->end_html;
 say $page;

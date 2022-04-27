@@ -5,9 +5,10 @@ use utf8;
 use v5.022;
 use Unicode::Collate;
 use Storable;
-use File::Slurp;                          # qw(read_dir);
+use File::Slurp::Unicode;                          # qw(read_dir);
 use Getopt::Long;
 use Data::Dumper;
+use experimental 'smartmatch';                # silence smartmatch warning;
 # use Time::HiRes qw(gettimeofday tv_interval);
 
 # my $start_time = [gettimeofday];
@@ -34,7 +35,7 @@ unless (scalar @dicts){                       # Look for DSLs in the working dir
 }
 # my $rc_file = "lectusrc";
 # write_file(
-#   $rc_file, Data::Dumper->Dump ( [ \@dicts, $dict_dir], ['dicts', 'dicts_dir'] )
+#   $rc_file, Data::Dumper->Dump ( [ \@dicts, \$dict_dir], ['*dicts', '*dicts_dir'] )
 # );
 # exit;
 
@@ -48,7 +49,6 @@ unless ($regex_flag){
 }
 
 foreach my $dict (@dicts){
-  # $dict = $dict_dir . $dict;
   my $dict_file = $dict_dir . $dict . '.dsl';
   my $dict_index = $idx_dir . $dict . '.idx';
   my %w_index;
@@ -56,6 +56,7 @@ foreach my $dict (@dicts){
   &dict_indexer($dict) unless -e $dict_index;      # Generate index if not there
 
   %w_index = %{retrieve($dict_index)};
+   # eval ( read_file($dict_index) );
 
   # my $load_time = [gettimeofday];
 
@@ -66,7 +67,6 @@ foreach my $dict (@dicts){
     print "\x1b[33;1m$dict\x1b[0m: -\n";
     next;                                         # Stop if nothing in index
   }
-  # my $search_time = [gettimeofday];
 
   open (IN, '<', $dict_file) or die $!;
   foreach ( $uc->sort(keys %w_matches) ){
@@ -90,18 +90,10 @@ foreach my $dict (@dicts){
       &colour_Ansi($line);                                # Markups -> colour
       $body .= ( ' ' x $indent) . $line;
     }
-    # $body =~ s/\s*\[\/?m\d?\]//g;
 
     print "\x1b[35;1m", $word, "\x1b[0m", ": ";
     print "$body\n";
   }
-    # my $seek_time = [gettimeofday];
-    # say "--------------------------------------";
-    # printf("Load Time:             %.4f sec\n", tv_interval($start_time, $load_time));
-    # printf("Headword Search Time:  %.4f sec\n", tv_interval( $load_time, $search_time));
-    # printf("Explanation Seek Time: %.4f sec\n", (tv_interval $search_time, $seek_time));
-    # printf("Total Time:            %.4f sec\n", (tv_interval $start_time, $seek_time));
-    # say "--------------------------------------";
   close IN;
 } # --- end foreach $dic
 
@@ -161,7 +153,7 @@ sub dict_indexer
   my $dict = shift @_;
   my $dict_idx = $idx_dir . $dict . '.idx';
   my $dict_file = $dict_dir . $dict . '.dsl';
-
+  my @stopwords = qw/and και δε ο η το του της των αι οι τα εν ω/;
   my %w_index;
   my %dups;
   my $offset = 0;
@@ -181,8 +173,9 @@ sub dict_indexer
       $head =~ s/\x{feff}//;
       my @heads = split /\s+/, $head;
       foreach (@heads){
-        next if m/and/i;
         $d_head = &detone($_);
+        $d_head =~ s/(\,|\.)$//;
+        next if $d_head ~~ @stopwords;       # Do not enter stop words
         unless (exists $w_index{$d_head}){
           $w_index{$d_head} = [$offset, $head];
         }else{
@@ -212,6 +205,9 @@ sub dict_indexer
     }  # -- End unless /^t/
   }
   store \%w_index, $dict_idx;
+  # my $index_string = Data::Dumper->new( [\%w_index], [qw(*w_index)]);
+  # write_file($dict_idx, $index_string->Dump );
+  # print $index_string->Dump;
   close IN;
   print " (Indexed -> $dict_idx)\n";
   return;
@@ -229,7 +225,7 @@ sub detone
   $head = NFD($head);
   $head =~ s/\pM*//g;
   $head = lc $head;
-  $head =~ s/\s+//;
+  $head =~ s/\s+/ /;
   return $head;
 }
 

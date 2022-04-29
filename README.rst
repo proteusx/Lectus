@@ -40,14 +40,14 @@ _____
 
 OPTIONS::
 
-
-       -r or --regex               Toggle search by regular expression
+       -i or --index               Index all installed dictionaries
        -l or --lexica              Space separated list of dictionaries
        -d or --directory           Path to the dictionaries directory
                                    ( default directory ./)
 
-If option ``-r`` is given then ``LEMMA`` is assumed to be a regular expression otherwise
-Lectus will look for an exact match.
+If option ``-i`` is given then Lectus will index all dictionaries found in the
+default directory ``./dictionaries`` or in the directory specified with by option
+``-d``
 
 If option ``-l`` is given and it is followed by one or more dictionary names, these will be
 searched, otherwise all dictionaries present in the specified directory, or in the
@@ -68,26 +68,26 @@ To search all dictionaries for the word ``κηπος``::
 
       lectus κηπος
 
-The search term can be a regular expression like::
+The search term can include the SQLlite wildcard characters '%' and '_'::
 
-  lectus κ.*ος -r -l photius
+  lectus κη_ος -l suda
 
-Will return all words that include strings that start with a "**κ**" followed by any number
-of characters and end with a "**ς**".
+Will return κῆδος, κημός, κῆπος, κῆτος, etc,.
 
-To search the Suda_ lexicon (file ``suda.dsl``) for words like
-``κῆπος`` and ``κῆτος``::
+To search all installed dictionaries for words ending in 'κηπος'::
 
- lectus \^κη\(π\|τ\)ος -r -l suda
+  lectus %κηπος
 
-Any Perl like regular expression is acceptable input, provided that symbols that are
-significant to the shell, like ``^,|,(,)``, etc. are escaped with a "\\".
+This will search all dictionaries for entries that include the string
+'λεγω' ::
+
+  lectus %λεγω%
 
 Lectus displays in alphabetical order the first 20 results that match the query.
 
 
 When Lectus sees a dictionary for the first time it will generate an index file
-(.idx) which records the location of every headword within the .dsl file.
+(.db) which records the location of every headword within the .dsl file.
 Subsequent queries on the same dictionary will go through this index, find the
 headword, read the corresponding index and rapidly locate the answer in the .dsl
 file.

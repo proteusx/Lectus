@@ -3,65 +3,59 @@
 use strict;
 use utf8;
 use v5.022;
-use Unicode::Collate;
-use Storable;
-use File::Slurp::Unicode;                          # qw(read_dir);
+use DBI;
+use File::Slurp;                              # qw(read_dir);
 use Getopt::Long;
 use Data::Dumper;
-use experimental 'smartmatch';                # silence smartmatch warning;
-# use Time::HiRes qw(gettimeofday tv_interval);
-
-# my $start_time = [gettimeofday];
+use Encode qw( decode_utf8 );                 # Needed for SQLite greek text
+use experimental 'smartmatch';                # silence smartmatch (~~) warning;
 &usage unless scalar(@ARGV);                  # Error return if no args at all
-my $uc = Unicode::Collate->new();
 
-my $regex_flag = 0;
+my $index_flag = 0;
+my $max_matches = 20;                          # Maximum lemata to return
 my @dicts;
 my $dict_dir = "./dictionaries";
 my $idx_dir = "./idx/";
+my $db_table = "word_index";
 
 GetOptions(
-  'regex!'                => \$regex_flag,
+  'index'                 => \$index_flag,
   'lexica=s{1,}'          => \@dicts,
   'directory=s'           => \$dict_dir,
 ) or &usage;                                  # Error return if otions fault
-$dict_dir =~ s/$/\// unless $dict_dir =~ m/\/$/;
-&usage unless scalar(@ARGV);                  # Error return if no search term
-my $search_regex = &detone(lc(shift @ARGV));  # Only the search term is left in ARGV
 
-unless (scalar @dicts){                       # Look for DSLs in the working dir
+$dict_dir =~ s/$/\// unless $dict_dir =~ m/\/$/;  # append / if not there
+
+if ($index_flag){                              # call indexer and exit
+  &dict_indexer($dict_dir);
+  exit 0;
+}
+&usage unless scalar(@ARGV);                  # Error return if no search term
+
+unless (scalar @dicts){                       # Look for DSLs in $dict_dir
   @dicts = grep {/\.dsl/} read_dir("$dict_dir");
   @dicts = map { (my $s = $_) =~ s/\.dsl//; $s} @dicts;
 }
-# my $rc_file = "lectusrc";
-# write_file(
-#   $rc_file, Data::Dumper->Dump ( [ \@dicts, \$dict_dir], ['*dicts', '*dicts_dir'] )
-# );
-# exit;
 
-my $max_matches = 20;                          # Maximum lemata to return
-
-my $lemma;
-unless ($regex_flag){
-  $lemma = qr/^$search_regex-?\d?$/;
-}else{
-  $lemma = qr/$search_regex/;
-}
+my $search = &detone(lc(shift @ARGV));        # Only the search term is left in ARGV
 
 foreach my $dict (@dicts){
   my $dict_file = $dict_dir . $dict . '.dsl';
-  my $dict_index = $idx_dir . $dict . '.idx';
+  die "$dict_file not found" unless -e $dict_file;
+  my $dict_index = $idx_dir . $dict . '.db';
+  die "$dict_index not found" unless -e $dict_index;
   my %w_index;
+  my $dsn = qq(DBI:SQLite:dbname=$dict_index;,,,{ RaiseError=>1, AutoCommit=>1});
+  my $dbh = DBI->connect($dsn) or die $DBI::errstr;
 
-  &dict_indexer($dict) unless -e $dict_index;      # Generate index if not there
+  my $sql = qq{SELECT HEAD, HEADWORD, OFFSET FROM $db_table WHERE HEAD LIKE ? };
+  my $sth = $dbh->prepare($sql) or die ("Cannot Prepare:  " . $DBI::errstr);
+  $sth->execute($search) or die("Cannot Execute: " . $DBI::errstr);
 
-  %w_index = %{retrieve($dict_index)};
-   # eval ( read_file($dict_index) );
+  my @w_matched = sort{ $a->[0] cmp $b->[0] } @{$sth->fetchall_arrayref()};
 
-  # my $load_time = [gettimeofday];
 
-  my %w_matches = map { $_ => $w_index{$_} }  grep {/$lemma/} keys %w_index;
-  if (scalar keys %w_matches){
+  if (scalar @w_matched){
     print "\x1b[33;1m$dict\x1b[0m:\n";
   } else {
     print "\x1b[33;1m$dict\x1b[0m: -\n";
@@ -69,8 +63,8 @@ foreach my $dict (@dicts){
   }
 
   open (IN, '<', $dict_file) or die $!;
-  foreach ( $uc->sort(keys %w_matches) ){
-    my ($idx, $word) = @{$w_matches{$_}};            # [index, word]
+  foreach ( @w_matched) {
+    my ($head, $word, $idx) = @$_;
     seek IN, $idx, 0;
     my $body = "";
     while(1){
@@ -89,12 +83,13 @@ foreach my $dict (@dicts){
       $line =~ s/\s*\[\/?m\d?\]//g;
       &colour_Ansi($line);                                # Markups -> colour
       $body .= ( ' ' x $indent) . $line;
+      # last unless $regex_flag;
     }
-
-    print "\x1b[35;1m", $word, "\x1b[0m", ": ";
+    print "\x1b[35;1m", decode_utf8($word), "\x1b[0m", ": ";
     print "$body\n";
   }
   close IN;
+  $dbh->disconnect();
 } # --- end foreach $dic
 
 #-----------------------------------------------------------
@@ -150,66 +145,109 @@ sub decolour
 
 sub dict_indexer
 {
-  my $dict = shift @_;
-  my $dict_idx = $idx_dir . $dict . '.idx';
-  my $dict_file = $dict_dir . $dict . '.dsl';
-  my @stopwords = qw/and και δε ο η το του της των αι οι τα εν ω/;
-  my %w_index;
-  my %dups;
-  my $offset = 0;
-  my $head;
-  my $d_head;
-  my $body_lines = 1;
-  my @prev_d_heads= ();       # Store detoned heads for bodyless lemmata
-  open (IN, '<', $dict_file) or die $!;
-  while (<IN>) {
-    next if /#/;
-    next if /^\s*$/;
-    unless (/^\t/){
-      push @prev_d_heads, $d_head;
-      $offset = tell(IN);
-      my $head = $_;
-      $head =~ s/(\n|\r)//g;    # Need this for DOS \n\r. Chomp leaves \r
-      $head =~ s/\x{feff}//;
-      my @heads = split /\s+/, $head;
-      foreach (@heads){
-        $d_head = &detone($_);
-        $d_head =~ s/(\,|\.)$//;
-        next if $d_head ~~ @stopwords;       # Do not enter stop words
-        unless (exists $w_index{$d_head}){
-          $w_index{$d_head} = [$offset, $head];
-        }else{
-          if (exists($dups{$d_head})){
-            $dups{$d_head}++;
-            $w_index{$d_head . "-" ."$dups{$d_head}"} = [$offset, $head];
+  use Parallel::ForkManager;
+  my $pm = Parallel::ForkManager->new(7);
+  my $dict_dir = shift @_;
+  print "Indexing dictionaries in $dict_dir  ...\n";
+  my @dicts = grep {/\.dsl/} read_dir("$dict_dir");
+  @dicts = map { (my $s = $_) =~ s/\.dsl//; $s} @dicts;
+  # $| = 1;
+  foreach my $dict (@dicts){
+    my $pid = $pm->start and next;
+    my $dict_file = $dict_dir . $dict . '.dsl';
+    my $dict_index = $idx_dir . $dict . '.db';
+    unlink $dict_index if -e $dict_index;
+
+    print "$dict ...";
+    my @stopwords = qw/and και μεν δε ο η το του της των αι οι τα εν ω/;
+    my $dsn = qq(DBI:SQLite:dbname=$dict_index;,,,{ RaiseError=>1, AutoCommit=>1});
+    my $dbh = DBI->connect($dsn) or die $DBI::errstr;
+    $dbh->do("PRAGMA synchronous = OFF");             # otherwise insertions are too slow
+    my $tbl = qq{ CREATE TABLE IF NOT EXISTS $db_table
+                      (ID INTEGER PRIMARY KEY NOT NULL,
+                        HEAD TEXT,
+                        HEADWORD TEXT,
+                        OFFSET  INTEGER NOT NULL);
+                };
+    my $rv = $dbh->do($tbl);
+    die ("Table creation error" . $DBI::errstr) if $rv < 0;
+    #
+    # Prepare insertion command
+    #
+    my $sql = qq{INSERT INTO $db_table (HEAD, HEADWORD, OFFSET) VALUES(?, ?, ?);};
+    my $sth = $dbh->prepare($sql) or die("cannot prepare: " . $DBI::errstr);
+
+    my %w_index;
+    my %dups;
+    my $offset = 0;
+    my $head;
+    my $d_head;
+    my $body_lines = 1;
+    my @prev_d_heads= ();               # Store detoned heads for bodyless lemmata
+    open (IN, '<', $dict_file) or die $!;
+    while (<IN>) {
+      next if /#/;
+      next if /^\s*$/;
+      unless (/^\t/){
+        push @prev_d_heads, $d_head;
+        $offset = tell(IN);
+        my $head = $_;
+        $head =~ s/(\n|\r)//g;           # Need this for DOS \n\r. Chomp leaves \r
+        $head =~ s/\x{feff}//;
+        my @heads = split /\s+/, $head;
+        foreach (@heads){
+          $d_head = &detone($_);
+          $d_head =~ s/(\,|\.)$//;
+          next if $d_head ~~ @stopwords;       # Do not enter stop words
+          unless (exists $w_index{$d_head}){
+            $w_index{$d_head} = [$offset, $head];
           }else{
-            $dups{$d_head} = 1;
-            $w_index{$d_head . "-1"} = [$offset, $head];
-          }
-        }  # -- End unless exists
-      }
+            if (exists($dups{$d_head})){
+              $dups{$d_head}++;
+              $w_index{$d_head . "-" ."$dups{$d_head}"} = [$offset, $head];
+            }else{
+              $dups{$d_head} = 1;
+              $w_index{$d_head . "-1"} = [$offset, $head];
+            }
+          }  # -- End unless exists
+        }
 
-      #-------------------------------------------------------------
-      #      Offsets of bodyless lemmata are set to the first
-      #      lemma that has a body.  Good for Beeks but may give
-      #      silly results in other dictionaries
-      #-------------------------------------------------------------
-      if ($body_lines eq 0){
-        @{$w_index{$_}}[0] = $offset foreach (@prev_d_heads);
-      }
-      $body_lines = 0;                  # Reset lines counter
-    } else {
-      $body_lines++;
-      @prev_d_heads =();                # Reset
+        #-------------------------------------------------------------
+        #      Offsets of bodyless lemmata are set to the first
+        #      lemma that has a body.  Good for Beeks but may give
+        #      silly results in other dictionaries
+        #-------------------------------------------------------------
+        if ($body_lines eq 0){
+          @{$w_index{$_}}[0] = $offset foreach (@prev_d_heads);
+        }
+        $body_lines = 0;                  # Reset lines counter
+      } else {
+        $body_lines++;
+        @prev_d_heads =();                # Reset
 
-    }  # -- End unless /^t/
-  }
-  store \%w_index, $dict_idx;
-  # my $index_string = Data::Dumper->new( [\%w_index], [qw(*w_index)]);
-  # write_file($dict_idx, $index_string->Dump );
-  # print $index_string->Dump;
-  close IN;
-  print " (Indexed -> $dict_idx)\n";
+      }  # -- End unless /^t/
+    }
+    close IN;
+    my (@d_heads, @indexes, @heads);
+    foreach my $entry (sort keys %w_index){
+      push @indexes, $w_index{$entry}->[0];
+      push @heads,   $w_index{$entry}->[1];
+      $entry =~ s/\-\d+$//;                 # Remove -{1,2,3}
+      push @d_heads, $entry;
+    }
+    # my @d_heads = keys %w_index;
+    # s/\-\d+$// foreach @d_heads;
+    # my @values = values %w_index;
+    # my @indexes = map { $_->[0] } @values;
+    # my @heads = map { $_->[1] } @values;
+    $sth->execute_array({}, \@d_heads, \@heads, \@indexes);
+    $sth->finish;
+    $dbh->disconnect();
+    print " Completed\n";
+    $pm->finish;
+  }  # end foreach @dict
+  $pm->wait_all_children;
+  say "All done.";
   return;
 }
 
@@ -240,7 +278,7 @@ sub usage
   |     Usage:  ./lectus <lemma>  [option]                                   |
   |                                                                          |
   |     OPTIONS:                                                             |
-  |     -r or --regex               Toggle search by regular expression      |
+  |     -i or --index               Index all dictionaries                   |
   |     -l or --lexica              Space separated list of dictionaries     |
   |     -d or --directory           Path to the dictionaries directory       |
   |                                 Default directory path:  ./              |

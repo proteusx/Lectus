@@ -19,10 +19,11 @@ function AjaxPost(event){
 function getquerystring() {
     var form = document.forms['form_lectus'];
     var word = form.lemma.value;
-    var path = form.dir.value;
-    var qstr = 'dir=' + path + '&' + 'lemma=' + word;
-    var regex = form.regex.checked;
-    qstr += '&' + 'regex=' + regex;
+    // var path = form.dir.value;
+    // var qstr = 'dir=' + path + '&' + 'lemma=' + word;
+    var qstr = 'lemma=' + word;
+    // var regex = form.regex.checked;
+    // qstr += '&' + 'regex=' + regex;
     dicts_selected = form.dicts.selectedOptions;
     var Ndicts = dicts_selected.length;
     qstr +=  '&' + 'Ndicts=' + Ndicts;

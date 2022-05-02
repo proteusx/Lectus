@@ -1,17 +1,15 @@
-#!/usr/bin/perl -w -CSDA
+#!/usr/bin/perl -w
+#-CSDA
 
 use strict;
 use utf8;
 use v5.022;
-use Unicode::Collate;
-use Encode qw(encode decode);
-use Storable;
+use Encode qw(encode decode decode_utf8);
 use File::Slurp; #  qw(read_dir);
 use CGI;
 use Cwd;
 use FindBin qw($Bin);
 
-my $uc = Unicode::Collate->new();
 my $cgi = CGI->new();
 
 #------------------------------------------------------------------------------
@@ -55,10 +53,10 @@ my $form = q{
         <input type="text" id="lemma" name="lemma" placeholder="Enter Lemma" required>
         <button onclick="AjaxPost(event);">Search</button>
         <br><br>
-        <label for="regex">Regular Expression</label>
-        <input  type="checkbox" name="regex" id="regex">
       </div>
 };
+        # <label for="regex">Regular Expression</label>
+        # <input  type="checkbox" name="regex" id="regex">
 my $results = q{
         <div id="result" class="result"></div>
 };
@@ -87,4 +85,5 @@ $page .= $results;
 $page .= $dir_input;
 $page .= '<script src="/lectus.js"></script>';
 $page .= $cgi->end_html;
-say $page;
+say encode('UTF-8', $page);
+# say $page;

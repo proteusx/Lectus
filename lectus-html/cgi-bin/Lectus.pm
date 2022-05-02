@@ -1,0 +1,1 @@
+/home/prot/Desktop/projects/dictionaries-devel/lectus/lectus.git/Lectus.pm

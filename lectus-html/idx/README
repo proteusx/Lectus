@@ -1,1 +1,6 @@
 Default directory for Lectus index files
+To populate run: lectus -i
+This will geneate an index file for each .dsl file found in the dictionaries
+directory.
+
+

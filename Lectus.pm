@@ -69,6 +69,7 @@ sub dict_indexer
           $d_head = &detone($_);
           $d_head =~ s/(\,|\.|\'|᾽)$//;
           next if $d_head ~~ @stopwords;       # Do not enter stop words
+          # warn $head unless $d_head;
           push @entries, [$d_head, $offset, $head];
         }
         #-------------------------------------------------------------

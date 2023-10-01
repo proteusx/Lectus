@@ -26,7 +26,7 @@ ____________
 
 Clone the GitHub repository::
 
-   git clone:https://github.com/proteusx/Lectus.git
+   git clone:https://codeberg.org/proteusx/Lectus.git
 
 
 Copy or link some .dsl dictionary files into the Lectus directory.
@@ -92,8 +92,8 @@ Subsequent queries on the same dictionary will go through this index, find the
 headword, read the corresponding index and rapidly locate the answer in the .dsl
 file.
 
-.. _Photius: https://github.com/proteusx/Photius-Lexicon
-.. _Suda: https://github.com/proteusx/Suda-For-GoldenDict
+.. _Photius: https://codeberg.org/proteusx/Photius-Lexicon
+.. _Suda: https://codeberg.org/proteusx/Suda-For-GoldenDict
 
 
 
